@@ -8,7 +8,7 @@ Compiling Instructions: g++ tests/testGrad.cpp src/*.cpp -Iinclude -std=c++17 -o
 #include "Grid/Grid.h"
 #include "Fields/ScalarField.h"
 #include "Fields/VectorField.h"
-#include "Matrix/explicitCalc.h"
+#include "FiniteVolumeMethods/explicitCalc.h"
 
 using namespace std;
 
@@ -59,20 +59,14 @@ bool testLinearGrad(const Grid& mesh){
 int main(){
 
     //import the .msh file
-    ifstream file("tests/assets/cavity.msh");
+    ifstream file("tests/assets/structured.msh");
 
     if(!file.is_open()){
         cout << "\nCannot open the .msh file\n";
         return 1;
     }
 
-    Grid mesh;
-
-    mesh.readGmshAscii2(file);
-
-    mesh.buildMeshDetails();
-
-    mesh.evaluateGeometry();
+    Grid mesh(file);
 
     bool result = testLinearGrad(mesh);
 

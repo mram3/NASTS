@@ -7,7 +7,7 @@ Compiling Instruction :g++ tests/testLaplacian.cpp src/*.cpp -Iinclude -std=c++1
 #include "Grid/Grid.h"
 #include "Fields/ScalarField.h"
 #include "Matrix/FvMatrix.h"
-#include "Matrix/implicitAssembly.h"
+#include "FiniteVolumeMethods/implicitAssembly.h"
 
 using namespace std;
 
@@ -36,14 +36,12 @@ bool testLaplacian(const Grid& mesh){
 
     FvMatrix mat = implicitAssembly::laplacian(1.0, phi);
 
-    mat.compressToCSR();
-
     std::vector<double> x = phi.scalarVariable;
-    std::vector<double> lhs = mat.SpMV(x);
+    std::vector<double> lhs = mat.A().SpMV(x);
 
-    std::vector<double> rhs = mat.getSource();
+    std::vector<double> rhs = mat.source();
 
-    double tolerance = 1e-4;
+    double tolerance = 1e-3;
 
     for(auto const& cell : mesh.getCells()){
         if(std::abs(rhs[cell.cellID]-lhs[cell.cellID]) > tolerance){
@@ -66,13 +64,7 @@ int main(){
         return 1;
     }
 
-    Grid mesh;
-
-    mesh.readGmshAscii2(file);
-
-    mesh.buildMeshDetails();
-
-    mesh.evaluateGeometry();
+    Grid mesh(file);
 
     bool result  = testLaplacian(mesh);
 

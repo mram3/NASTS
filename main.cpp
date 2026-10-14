@@ -14,16 +14,15 @@ using namespace std;
 
 int main(){
 
-    ifstream file("cavity.msh");
+    ifstream file("tests/assets/cavity.msh");
 
     if(!file.is_open()){
         cout << "Cannot open the .msh file\n";
         return 1;
     }
 
-    Grid mesh;
+    Grid mesh(file);
 
-    mesh.readGmshAscii2(file);
     file.close();
 
     auto nodes = mesh.getNodes();
@@ -53,8 +52,6 @@ int main(){
                                 << " " << nodes[0].z << endl;
     }
 
-    mesh.buildMeshDetails();
-
     auto& faces = mesh.getFaces();
     auto& cells = mesh.getCells();
 
@@ -83,8 +80,6 @@ int main(){
 
     cout << "Invalid Boundary Count : " << invalidBoundary << endl;
     cout << "Invalid Interior Faces Count : " << invalidInteriorFace << endl;
-
-    mesh.evaluateGeometry();
 
     cout << "\n--Geometry Details--\n";
 
