@@ -1,4 +1,5 @@
 #include "Grid/Grid.h"
+#include "Matrix/CsrAddress.h"
 
 #include <iostream>
 #include <sstream>
@@ -119,7 +120,6 @@ void Grid::buildMeshDetails
     faces.clear();
     cells.clear();
 
-    int faceCount = 0;
     //to map what pair of nodes constitute which face
     std::map<std::pair<int, int>, int> faceNodeMap;
 
@@ -132,10 +132,10 @@ void Grid::buildMeshDetails
         Cell presentCell;
 
         presentCell.cellID = cells.size();
-
-        int numVertices;
         
-        numVertices = element.nodeIDs.size();// 3 if triangle, 4 if quad etc.,
+        int numVertices = element.nodeIDs.size();// 3 if triangle, 4 if quad etc.,
+
+        presentCell.faceIDs.reserve(numVertices);
 
         for(int i = 0; i < numVertices; ++i){
             int n1 = element.nodeIDs[i];
@@ -147,7 +147,7 @@ void Grid::buildMeshDetails
             if(faceNodeMap.find(edge) == faceNodeMap.end()){
                 Face newface;//if not add a new face 
 
-                newface.faceID = faceCount++;
+                int faceID = faces.size(); //temporary identifier for face
 
                 newface.nodeA  = edge.first;
                 newface.nodeB  = edge.second;
@@ -156,9 +156,9 @@ void Grid::buildMeshDetails
 
                 faces.push_back(newface);
 
-                presentCell.faceIDs.push_back(newface.faceID);
+                presentCell.faceIDs.push_back(faceID);
 
-                faceNodeMap[edge] = newface.faceID;
+                faceNodeMap[edge] = faceID;
             }
 
             else{
@@ -190,6 +190,32 @@ void Grid::buildMeshDetails
             int faceID = id->second;
 
             faces[faceID].physicalTag = element.physicalTag;
+        }
+    }
+
+    //sorting the faces array to have internal faces at front (prevents if clause during assembly)
+
+    //partitioning internal faces to front
+    auto split = std::partition(faces.begin(), faces.end(), [](const Face& face){
+        return face.neighborCellID != -1;
+    });
+
+    numInternalFaces = std::distance(faces.begin(), split);
+
+    //now since the faceIDs are displaced randomly to bring internal faces at front we
+    //have to reassign those IDs to cell array
+    std::vector<int> newID(faces.size());
+    for(int i = 0; i < faces.size(); ++i){
+        //now we retrive that temporary id in the map
+        auto edge = std::minmax(faces[i].nodeA, faces[i].nodeB);
+        int tempIdx = faceNodeMap[edge];
+        newID[tempIdx] = i; //in place of that temp id we store the current id
+    }
+
+    for(auto& cell : cells){
+        int i = 0;
+        for(auto tempIdx : cell.faceIDs){
+            cell.faceIDs[i++] = newID[tempIdx];
         }
     }
 }
@@ -254,14 +280,38 @@ void Grid::evaluateGeometry
         double xLeft = cells[face.ownerCellID].cell_center_x;
         double yLeft = cells[face.ownerCellID].cell_center_y;
 
-        double dx_ = face.face_center_x - xLeft;//vector from face center to cell center
-        double dy_ = face.face_center_y - yLeft;
+        face.xOf = face.face_center_x - xLeft;//vector from face center to cell center
+        face.yOf = face.face_center_y - yLeft;
 
-        double dot_prod = dx_*nx + dy_*ny;//dot product between normal and celltoface vector
+        double dot_prod = face.xOf*nx + face.yOf*ny;//dot product bw normal and celltoface vector
 
         if(dot_prod < 0) nx = -nx, ny = -ny;
 
         face.face_normal_x = nx;
         face.face_normal_y = ny;
+
+        face.face_area_x = nx*face.face_area;
+        face.face_area_y = ny*face.face_area;
+
+        if(face.physicalTag == -1){
+            face.xON = cells[face.neighborCellID].cell_center_x - xLeft;
+            face.yON = cells[face.neighborCellID].cell_center_y - yLeft;
+        }
     }
 }
+
+Grid::Grid
+(
+    std::ifstream& mshfile
+)
+{
+    readGmshAscii2(mshfile);
+
+    buildMeshDetails();
+
+    evaluateGeometry();
+
+    pattern_ = std::make_unique<CsrAddress>(*this);
+}
+
+Grid::~Grid() = default;
