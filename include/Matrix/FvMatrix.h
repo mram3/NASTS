@@ -1,53 +1,48 @@
 #pragma once
 
+#include "Matrix/CsrMatrix.h"
+#include "Matrix/CsrAddress.h"
 #include "Fields/ScalarField.h"
 
 #include <vector>
 
 class FvMatrix{
 private:
-    // COO arrays
-    std::vector<int> rowsCOO;
-    std::vector<int> colCOO;
-    std::vector<double> valCOO;
 
     //CSR arrays
-    std::vector<int> rowPtr;
-    std::vector<int> col;
-    std::vector<double> val;
+    ScalarField& scalarField_;
+    const CsrAddress& sparsityPattern_;
+    CsrMatrix A_;
 
-    std::vector<double> source;
+    std::vector<double> source_; // b term
 
 public:
 
-    const ScalarField& scalarField;
-
-    //constructor
-    FvMatrix(const ScalarField& sField_) : scalarField(sField_)
+    //construct from scalar field
+    FvMatrix
+    (
+        ScalarField& sField
+    ) :
+        scalarField_(sField),
+        sparsityPattern_(scalarField_.getMesh().address()),
+        A_(sparsityPattern_) //initialize CsrMatrix A
     {
-        int numCells = scalarField.scalarVariable.size();
-
-        //2 coefficients per face * ~5 non zero terms
-        rowsCOO.reserve(10 * numCells);
-        colCOO.reserve(10 * numCells);
-        valCOO.reserve(10 * numCells);
-
-        //row count will be exactly equal to no of cells + 1 to store total non zero terms
-        rowPtr.reserve(numCells + 1);
-
-        //2D quad cell in fvm has ~5 non zero terms every row
-        col.reserve(5 * numCells);
-        val.reserve(5 * numCells);
-
-        source.assign(numCells, 0.0);
+        int numCells = scalarField_.scalarVariable.size();
+        source_.assign(numCells, 0.0); //source term initialized
     }
 
-    //to dynamically push coefficients to COO arrays
-    void addCoeffs
+    //the prime matrix assembly methods
+    void addDiagCoeffs
     (
-        int row,
-        int col,
+        int cellID,
         double value
+    );
+
+    void addOffDiagCoeffs
+    (
+        int faceID,
+        double oFlux,
+        double nFlux
     );
 
     void addSource
@@ -56,12 +51,7 @@ public:
         double value
     );
 
-    void compressToCSR();
-
-    std::vector<double> SpMV
-    (
-        const std::vector<double>& x
-    ) const;
-
-    const std::vector<double>& getSource() const {return source;}
+    //getter method for solvers
+    const CsrMatrix& A() const {return A_; }
+    const std::vector<double>& source() const {return source_; }
 };
