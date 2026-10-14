@@ -1,4 +1,4 @@
-#include "Matrix/explicitCalc.h"
+#include "FiniteVolumeMethods/explicitCalc.h"
 
 #include <cmath>
 
@@ -17,6 +17,8 @@ VectorField grad
 
     const auto& faces = phi.getMesh().getFaces();
     const auto& cells = phi.getMesh().getCells();
+    int numInFace = phi.getMesh().internalFaces();
+    int numFaces  = faces.size();
 
     VectorField gradPhi("gradPhi", phi.getMesh());
     VectorField oldGradPhi("oldGradPhi", phi.getMesh());//to store previous corrected value
@@ -31,7 +33,8 @@ VectorField grad
             gradPhi.vectorVariable[cell.cellID].y = 0.0;
         }//initialized to zero so to dynamically add fluxes
 
-        for(const auto& face : faces){
+        for(int i = 0; i < numInFace; ++i){
+            const auto& face = faces[i];
             int oID = face.ownerCellID;
             int nID = face.neighborCellID;
 
@@ -39,88 +42,72 @@ VectorField grad
             //                    F     - neighbor cell's center
             //                    f     - face center
             //                    f'    - center of line joining two cell's center
-            double xf = face.face_center_x;
-            double yf = face.face_center_y;
+            //To match with varaible names used in the book
 
-            double Sx = face.face_normal_x*face.face_area;
-            double Sy = face.face_normal_y*face.face_area;
+            double xCf = face.xOf;// vector pointing from face f to Cell center C
+            double yCf = face.yOf;
 
-            double xC = cells[oID].cell_center_x;
-            double yC = cells[oID].cell_center_y;
+            double xCF = face.xON;// vector pointing from neighbor cell to primary cell C
+            double yCF = face.yON;
 
-            double xCf = xC - xf;// vector pointing from face to Cell center
-            double yCf = yC - yf;
+            double q = - ((xCf*xCF) + (yCf*yCF)) / ((xCF*xCF) + (yCF*yCF));
 
-            if(face.physicalTag == -1){
+            //geometric weighing factor for interpolation of value at f' from C and F
+            double gC = 1 + q;
+
+            double phiC = phi.scalarVariable[oID];
+            double phiF = phi.scalarVariable[nID];
+            double phif_dash = gC * phiC + (1 - gC) * phiF;// interpolating value
+
+            //interpolating grad f' from grad at C and F for correcting gradient
+            //by better estimating f from f'. 0 at first iteration, meaning f = f'.
                 
-                double xF = cells[nID].cell_center_x;
-                double yF = cells[nID].cell_center_y;
-                
-                double xCF = xC - xF;// vector pointing from neighbor cell to primary cell
-                double yCF = yC - yF;
-                
-                double q = - ((xCf*xCF) + (yCf*yCF)) / ((xCF*xCF) + (yCF*yCF));
-                
-                double xf_dash = xC + q * xCF;// locating f'
-                double yf_dash = yC + q * yCF;
+            double xGradPhif_dash = gC * oldGradPhi.vectorVariable[oID].x 
+                                    + (1 - gC) * oldGradPhi.vectorVariable[nID].x;
+            double yGradPhif_dash = gC * oldGradPhi.vectorVariable[oID].y 
+                                    + (1 - gC) * oldGradPhi.vectorVariable[nID].y;
 
-                double xFf_dash = xF - xf_dash;// vector from f' to neighbor cell
-                double yFf_dash = yF - yf_dash;
+            double xff_dash = xCf + q * xCF;
+            double yff_dash = yCf + q * yCF;
 
-                //geometric weighing factor for interpolation of value at f' from C and F
-                double gC = (xFf_dash*xFf_dash + yFf_dash*yFf_dash) / (xCF*xCF + yCF*yCF);
-                gC = std::sqrt(gC);
+            //Subsequent iteration we improve f = f' + grad f' * (rf - rf')
+            double phif = phif_dash + xGradPhif_dash * xff_dash + yGradPhif_dash * yff_dash;
 
-                double phiC = phi.scalarVariable[oID];
-                double phiF = phi.scalarVariable[nID];
-                double phif_dash = gC * phiC + (1 - gC) * phiF;// interpolating value
+            gradPhi.vectorVariable[oID].x += phif*face.face_area_x;
+            gradPhi.vectorVariable[oID].y += phif*face.face_area_y;
+            gradPhi.vectorVariable[nID].x -= phif*face.face_area_x;
+            gradPhi.vectorVariable[nID].y -= phif*face.face_area_y;
+        }
 
-                //interpolating grad f' from grad at C and F for correcting gradient
-                //by better estimating f from f'. 0 at first iteration, meaning f = f'.
-                
-                double xGradPhif_dash = gC * oldGradPhi.vectorVariable[oID].x 
-                                        + (1 - gC) * oldGradPhi.vectorVariable[nID].x;
-                double yGradPhif_dash = gC * oldGradPhi.vectorVariable[oID].y 
-                                        + (1 - gC) * oldGradPhi.vectorVariable[nID].y;
+        for(int b = numInFace; b < numFaces; ++b){
+            const auto& face = faces[b];
+            int tag = face.physicalTag;
+            auto id = phi.boundaryConditionMap.find(tag);
+            auto bcType = id->second.bc;
+            double bcValue = id->second.value;
 
-                double xff_dash = xf - xf_dash;
-                double yff_dash = yf - yf_dash;
+            int oID = face.ownerCellID;
 
-                //Subsequent iteration we improve f = f' + grad f' * (rf - rf')
-                double phif = phif_dash + xGradPhif_dash * xff_dash + yGradPhif_dash * yff_dash;
-
-                gradPhi.vectorVariable[oID].x += phif*Sx;
-                gradPhi.vectorVariable[oID].y += phif*Sy;
-                gradPhi.vectorVariable[nID].x -= phif*Sx;
-                gradPhi.vectorVariable[nID].y -= phif*Sy;
+            if(bcType == BoundaryConditionType::Dirichlet){
+                //double phif = bcValue;
+                double phif = 2.0 * face.face_center_x + 3.0 * face.face_center_y; 
+                gradPhi.vectorVariable[oID].x += phif*face.face_area_x;
+                gradPhi.vectorVariable[oID].y += phif*face.face_area_y;
             }
+            else if(bcType == BoundaryConditionType::Neumann){
+                double phiC = phi.scalarVariable[oID];
 
-            else{
-                int tag = face.physicalTag;
-                auto id = phi.boundaryConditionMap.find(tag);
-                auto bcType = id->second.bc;
-                double bcValue = id->second.value;
+                double xCf = face.xOf;
+                double yCf = face.yOf;
+                double normDist = std::abs(xCf*face.face_normal_x + yCf*face.face_normal_y);
 
-                if(bcType == BoundaryConditionType::Dirichlet){
-                    double phif = bcValue;
-                    //double phif = 2.0 * face.face_center_x + 3.0 * face.face_center_y; 
-                    gradPhi.vectorVariable[oID].x += phif*Sx;
-                    gradPhi.vectorVariable[oID].y += phif*Sy;
-                }
-                else if(bcType == BoundaryConditionType::Neumann){
-                    double phiC = phi.scalarVariable[oID];
+                double phif = phiC + normDist*bcValue;
 
-                    double normDist = std::abs(xCf*face.face_normal_x 
-                                             + yCf*face.face_normal_y);
-
-                    double phif = phiC + normDist*bcValue;
-
-                    gradPhi.vectorVariable[oID].x += phif*Sx;
-                    gradPhi.vectorVariable[oID].y += phif*Sy;
-                }
+                gradPhi.vectorVariable[oID].x += phif*face.face_area_x;
+                gradPhi.vectorVariable[oID].y += phif*face.face_area_y;
             }
         }
-        
+
         for(const auto& cell : cells){
             double volume = cell.cell_volume;
 
@@ -130,8 +117,8 @@ VectorField grad
             oldGradPhi.vectorVariable[cell.cellID] = gradPhi.vectorVariable[cell.cellID];
         }
     }
-
+        
     return gradPhi;
 }
-
+  
 }
