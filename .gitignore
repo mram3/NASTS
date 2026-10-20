@@ -1,6 +1,12 @@
 *.exe
 
+build
+
+.vscode
+
 main
 test
+*.json
+
 toDo
-*.txt
+notes
