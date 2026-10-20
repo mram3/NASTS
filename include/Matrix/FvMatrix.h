@@ -1,35 +1,32 @@
 #pragma once
 
 #include "Matrix/CsrMatrix.h"
-#include "Matrix/CsrAddress.h"
-#include "Fields/ScalarField.h"
+#include "Matrix/SparseAddress.h"
+#include "FiniteVolumeFields/ScalarField.h"
+#include "nlohmann/json.hpp"
 
 #include <vector>
 
-class FvMatrix{
+class FvMatrix : public CsrMatrix{
 private:
-
-    //CSR arrays
-    ScalarField& scalarField_;
-    const CsrAddress& sparsityPattern_;
-    CsrMatrix A_;
-
+    ScalarField& phi_;
     std::vector<double> source_; // b term
 
+    //ptr arrays for Values array in CSR Matrix
+    std::vector<int> oValPtr_;//Owner Values Pointer
+    std::vector<int> nValPtr_;//Neighbor Values Pointer
 public:
 
-    //construct from scalar field
+    //Destructor 
+    virtual ~FvMatrix() = default;
+
+    //construct from the scalar field
     FvMatrix
     (
-        ScalarField& sField
-    ) :
-        scalarField_(sField),
-        sparsityPattern_(scalarField_.getMesh().address()),
-        A_(sparsityPattern_) //initialize CsrMatrix A
-    {
-        int numCells = scalarField_.scalarVariable.size();
-        source_.assign(numCells, 0.0); //source term initialized
-    }
+        ScalarField& phi 
+    );
+
+    void fillValPtrs();
 
     //the prime matrix assembly methods
     void addDiagCoeffs
@@ -52,6 +49,23 @@ public:
     );
 
     //getter method for solvers
-    const CsrMatrix& A() const {return A_; }
     const std::vector<double>& source() const {return source_; }
+
+    //getter method for operators
+    std::vector<double>& source(){return source_; }
+
+    //val ptr getters
+    const std::vector<int>& oValPtr() const {return oValPtr_; }
+    const std::vector<int>& nValPtr() const {return nValPtr_; }
+    
+    //solve methods
+    void solve();
 };
+
+//Global Operators
+
+FvMatrix& operator== 
+(
+    FvMatrix& mat, 
+    double b
+);
