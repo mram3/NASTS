@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Matrix/FvMatrix.h"
-#include "Fields/ScalarField.h"
-#include "Grid/Grid.h"
+#include "FiniteVolumeFields/ScalarField.h"
 
 namespace implicitAssembly
 {

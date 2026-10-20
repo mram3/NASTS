@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Matrix/FvMatrix.h"
-#include "Fields/ScalarField.h"
-#include "Fields/VectorField.h"
-#include "Type.h"
+#include "FiniteVolumeFields/ScalarField.h"
+#include "FiniteVolumeFields/VectorField.h"
 
 namespace explicitCalc{
 
