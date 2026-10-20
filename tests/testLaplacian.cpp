@@ -1,79 +1,112 @@
-/*
-Compiling Instruction :g++ tests/testLaplacian.cpp src/*.cpp -Iinclude -std=c++17 -o test && ./test
-*/
+#include "Tests.h"
+#include "Grid/FvMesh.h"
+#include "Grid/MeshReader.h"
+#include "Matrix/FvMatrix.h"
+#include "FiniteVolumeFields/ScalarField.h"
+#include "FiniteVolumeMethods/implicitAssembly.h"
+#include "Algebra/Solvers/LinearSolvers.h"
+#include "nlohmann/json.hpp"
+
 #include <iostream>
+#include <string>
 #include <cmath>
 
-#include "Grid/Grid.h"
-#include "Fields/ScalarField.h"
-#include "Matrix/FvMatrix.h"
-#include "FiniteVolumeMethods/implicitAssembly.h"
-
-using namespace std;
-
-bool testLaplacian(const Grid& mesh){
-
-    ScalarField phi("Phi", mesh);
-
-    for(auto const& cell : mesh.getCells()){
-        double x = cell.cell_center_x;
-        double y = cell.cell_center_y;
-
-        //test function: phi = 2*x + 3*y
-        phi.scalarVariable[cell.cellID] = 2.0 * x + 3.0 * y;
-    }
-
-    //setting boundary conditions
-    for(auto const& face : mesh.getFaces()){
-        if(face.physicalTag != -1){
-            double x = face.face_center_x;
-            double y = face.face_center_y;
-
-            phi.boundaryConditionMap[face.physicalTag] = {BoundaryConditionType::Dirichlet,
-                                                           2*x + 3*y};
-        }
-    }
-
-    FvMatrix mat = implicitAssembly::laplacian(1.0, phi);
-
-    std::vector<double> x = phi.scalarVariable;
-    std::vector<double> lhs = mat.A().SpMV(x);
-
-    std::vector<double> rhs = mat.source();
-
-    double tolerance = 1e-3;
-
-    for(auto const& cell : mesh.getCells()){
-        if(std::abs(rhs[cell.cellID]-lhs[cell.cellID]) > tolerance){
-            cout << "Failed at " << cell.cellID << endl;
-            cout << lhs[cell.cellID] << "   |   " << rhs[cell.cellID] << endl;
-            return false;
-        }
-    }
-
-    return true;
-}
-
 int main(){
+    std::cout << "--Laplacian Test--\n";
 
-    //import the .msh file
-    ifstream file("tests/assets/cavity.msh");
+    try
+    {
+        //solve a field using Dirichlet BC
+        Grid mesh = MeshReader::readGmshAscii22("tests/assets/square.msh");
+        FvMesh fvmesh(mesh);
 
-    if(!file.is_open()){
-        cout << "\nCannot open the .msh file\n";
+        ScalarField T1("T1", fvmesh);
+
+        std::string field1 = R"(
+        {
+            "InitialCondition" : 0.0,
+            "BoundaryCondition" : {
+                "LeftAndRight" : {"Type" : "Dirichlet", "Value" : 500},
+                "TopAndBottom"  : {"Type" : "Dirichlet", "Value" : 300.0} 
+            }
+        })";
+
+        nlohmann::json fieldConfig1 = nlohmann::json::parse(field1);
+        T1.create(fieldConfig1);
+
+        FvMatrix fvMat1 = implicitAssembly::laplacian(1.0, T1);
+
+        fvMat1 == 0.0;
+
+        std::string solver1 = R"(
+        {
+            "Solver" : "PCG",
+            "Preconditioner" : "Jacobi",
+            "MaxIter" : 1000,
+            "Tolerance" : 1e-6,
+            "RelTol" : 0.0
+        })";
+
+        nlohmann::json solverConfig1 = nlohmann::json::parse(solver1);
+        auto linearSolver1 = LinearSolvers::make(solverConfig1);
+
+        linearSolver1->solve(fvMat1, fvMat1.source(), T1.scalarVariable);
+
+        //test dirichlet BC
+        const auto& result1 = T1.scalarVariable;
+
+        EXPECT_TRUE
+        (
+            std::abs(result1[12] - 400.0) < 1e-10,
+            "Laplacian Assembly and Solve Method works fine with Dirichlet BC"
+        );
+
+        //solve a field with Neumann BC
+        ScalarField T2("T2", fvmesh);
+        std::string field2 = R"(
+        {
+            "InitialCondition" : 0.0,
+            "BoundaryCondition" : {
+                "LeftAndRight" : {"Type" : "Dirichlet", "Value" : 500},
+                "TopAndBottom"  : {"Type" : "Neumann", "Value" : 0.0} 
+            }
+        })";
+
+        nlohmann::json fieldConfig2 = nlohmann::json::parse(field2);
+        T2.create(fieldConfig2);
+
+        FvMatrix fvMat2 = implicitAssembly::laplacian(1.0, T2);
+
+        fvMat2 == 0.0;
+
+        std::string solver2 = R"(
+        {
+            "Solver" : "PCG",
+            "Preconditioner" : "Jacobi",
+            "MaxIter" : 1000,
+            "Tolerance" : 1e-6,
+            "RelTol" : 0.0
+        })";
+
+        nlohmann::json solverConfig2 = nlohmann::json::parse(solver2);
+        auto linearSolver2 = LinearSolvers::make(solverConfig2);
+
+        linearSolver2->solve(fvMat2, fvMat2.source(), T2.scalarVariable);
+
+        //test dirichlet BC
+        const auto& result2 = T2.scalarVariable;
+        
+        EXPECT_TRUE
+        (
+            std::abs(result2[12] - 500.0) < 1e-10,
+            "Laplacian Assembly and Solve Method works fine with Neumann BC"
+        );
+    }
+    catch(const std::exception& e)
+    {
+        std::cout << "\033[31m[ CRASH ]\033[0m " << e.what() << "\n";
         return 1;
     }
-
-    Grid mesh(file);
-
-    bool result  = testLaplacian(mesh);
-
-    if(result){
-        cout << "Laplacian Test Successfull\n";
-    }
-    else{
-        cout << "Laplacian Test failed\n";
-    }
-
-    return 0;
+    
+    return Tests::summary();
 }

@@ -1,81 +1,79 @@
-/*
-Compiling Instructions: g++ tests/testGrad.cpp src/*.cpp -Iinclude -std=c++17 -o test && ./test
-*/
-#include <iostream>
-#include <fstream>
-#include <cmath>
-
+#include "Tests.h"
+#include "FiniteVolumeFields/ScalarField.h"
+#include "FiniteVolumeFields/VectorField.h"
+#include "Grid/FvMesh.h"
 #include "Grid/Grid.h"
-#include "Fields/ScalarField.h"
-#include "Fields/VectorField.h"
+#include "Grid/MeshReader.h"
+#include "Type.h"
 #include "FiniteVolumeMethods/explicitCalc.h"
 
-using namespace std;
+#include <iostream>
+#include <string>
 
-bool testLinearGrad(const Grid& mesh){
+bool testResult(VectorField &result);
 
-    ScalarField phi("Phi", mesh);
+int main(){
+    std::cout << "--Explicit Gradient Calculation Test--\n";
 
-    for(auto const& cell : mesh.getCells()){
-        double x = cell.cell_center_x;
-        double y = cell.cell_center_y;
+    try
+    {
+        Grid mesh = MeshReader::readGmshAscii22("tests/assets/fourBoundaries.msh");
 
-        //test function: phi = 2*x + 3*y
-        phi.scalarVariable[cell.cellID] = 2.0 * x + 3.0 * y;
-    }
+        FvMesh fvmesh(mesh);
 
-    //setting boundary conditions
-    for(auto const& face : mesh.getFaces()){
-        if(face.physicalTag != -1){
-            double x = face.face_center_x;
-            double y = face.face_center_y;
+        ScalarField phi("T", fvmesh);
 
-            phi.boundaryConditionMap[face.physicalTag] = {BoundaryConditionType::Dirichlet,
-                                                           0};//some random value never accessed
+        std::string field = R"(
+        {
+            "InitialCondition" : 500.0,
+            "BoundaryCondition" : {
+                "Left" : {"Type" : "Dirichlet", "Value" : 0.0},
+                "Right"  : {"Type" : "Dirichlet", "Value" : 200.0},
+                "Top" : {"Type" : "Neumann", "Value" : 0.0},
+                "Bottom" : {"Type" : "Neumann", "Value" : 0.0}  
+            }
+        })";
+
+        nlohmann::json fieldConfig = nlohmann::json::parse(field);
+        phi.create(fieldConfig);
+
+        const auto& cells = fvmesh.cells();
+        for(const auto& cell : cells){
+            phi.scalarVariable[cell.cellID] = 200*cell.cell_center_x;
         }
+
+        VectorField result = explicitCalc::grad(phi);
+
+        EXPECT_TRUE
+        (
+            testResult(result),
+            "Explicit Gradient Calculation"
+        );
     }
+    catch(const std::exception& e)
+    {
+        std::cout << "\033[31m[ CRASH ]\033[0m " << e.what() << "\n";
+        return 1;
+    }
+    
+    return Tests::summary();
+}
 
-    VectorField gradPhi = explicitCalc::grad(phi);
-
-    double tolerance = 1e-8;
-
-    for(const auto& cell : mesh.getCells()){
-        double gradx = gradPhi.vectorVariable[cell.cellID].x;
-        double grady = gradPhi.vectorVariable[cell.cellID].y;
-
-        double dx = std::abs(gradx - 2.0);
-        double dy = std::abs(grady - 3.0);
-        if(dx > tolerance || dy > tolerance){
-            cout << "Gradient is not matching at " << cell.cellID <<
-                    ". Expected (2.0, 3.0) but got " << gradx <<", " << grady << endl;
-            
+bool testResult
+(
+    VectorField& result
+)
+{
+    for(int i = 0; i < result.vectorVariable.size(); ++i){
+        if(
+            std::abs(result.vectorVariable[i].x - 200.0) > 1e-6 ||
+            std::abs(result.vectorVariable[i].y - 0.0) > 1e-6
+        ){
+            std::cout << "Fails at " << i << " Calculated Value : " 
+                      << result.vectorVariable[i].x << " " << result.vectorVariable[i].y;
             return false;
         }
     }
 
     return true;
-}
-
-int main(){
-
-    //import the .msh file
-    ifstream file("tests/assets/structured.msh");
-
-    if(!file.is_open()){
-        cout << "\nCannot open the .msh file\n";
-        return 1;
-    }
-
-    Grid mesh(file);
-
-    bool result = testLinearGrad(mesh);
-
-    if(result){
-        cout << "\nGradient Calculation Successfull\n";
-    }
-    else{
-        cout << "\nGradient Calculation failed\n";
-    }
-
-    return 0;
 }
