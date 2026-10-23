@@ -10,4 +10,17 @@ namespace implicitAssembly
         double gamma, 
         ScalarField& phi
     );
+
+    FvMatrix EulerDdt
+    (
+        double rho,
+        ScalarField& U
+    );
+
+    FvMatrix Ddt
+    (
+        double rho,
+        ScalarField& U
+    );
+    
 } // namespace implicitAssembly
