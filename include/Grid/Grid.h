@@ -32,7 +32,8 @@ class Grid{
 private:
     std::vector<Node> nodes_;
     std::vector<Element> elements_;
-    std::map<int, std::string> physicalName_;
+    std::map<int, std::string> boundaries_;
+    std::map<int, std::string> domains_;
 
 public:
 
@@ -41,16 +42,19 @@ public:
     (
         std::vector<Node> n,
         std::vector<Element> e,
-        std::map<int, std::string> pName
+        std::map<int, std::string> b,
+        std::map<int, std::string> d
     )
     :
         nodes_(std::move(n)),
         elements_(std::move(e)),
-        physicalName_(std::move(pName))
+        boundaries_(std::move(b)),
+        domains_(std::move(d))
     {}
 
     //getters for other mesh classes
     const std::vector<Node>& nodes() const {return nodes_; }
     const std::vector<Element>& elements() const {return elements_; }
-    const std::map<int, std::string>& physicalName() const {return physicalName_; }
+    const std::map<int, std::string>& boundaries() const {return boundaries_; }
+    const std::map<int, std::string>& domians() const {return domains_; }
 };

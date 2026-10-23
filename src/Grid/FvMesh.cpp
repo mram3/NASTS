@@ -27,8 +27,12 @@ FvMesh::FvMesh
     evalGeometry(mesh);
 
     //map phyicalName to tag
-    for(const auto& pair : mesh.physicalName()){
-        physicalTag_[pair.second] = pair.first;
+    for(const auto& pair : mesh.boundaries()){
+        fvboundaries_[pair.second] = pair.first;
+    }
+    //map phyicalName to tag
+    for(const auto& pair : mesh.domians()){
+        fvdomains_[pair.second] = pair.first;
     }
 }
 
@@ -115,7 +119,8 @@ void FvMesh::buildFvMesh
         }
     }
 
-    //sorting the faces array to have internal faces at front (prevents if clause during assembly)
+    //sorting the faces array to have internal faces at front 
+    //(prevents if clause during assembly)
 
     //partitioning internal faces to front
     auto split = std::partition(faces_.begin(), faces_.end(), [](const Face& face){
@@ -207,7 +212,7 @@ void FvMesh::evalGeometry
         face.xOf = face.face_center_x - xLeft;//vector from face center to cell center
         face.yOf = face.face_center_y - yLeft;
 
-        double dot_prod = face.xOf*nx + face.yOf*ny;//dot product bw normal and celltoface vector
+        double dot_prod = face.xOf*nx + face.yOf*ny;//dot product bw normal & celltoface vector
 
         if(dot_prod < 0) nx = -nx, ny = -ny;
 
@@ -224,14 +229,32 @@ void FvMesh::evalGeometry
     }
 }
 
-const std::shared_ptr<SparseAddress> FvMesh::fvaddress
+const std::shared_ptr<SparseAddress> FvMesh::fvAddress
 (
 
 ) const
 {
-    if(!fvaddress_){
-        fvaddress_ = std::make_shared<SparseAddress> (FvAddressing::buildFvAddress(*this));
+    if(!fvAddress_){
+        fvAddress_ = std::make_shared<SparseAddress> 
+                    (
+                        FvAddressing::buildFvAddress(*this)
+                    );
     }
 
-    return fvaddress_;
+    return fvAddress_;
+}
+
+const std::shared_ptr<SparseAddress> FvMesh::fvDiagAddress
+(
+
+) const
+{
+    if(!fvDiagAddress_){
+        fvDiagAddress_ = std::make_shared<SparseAddress> 
+                        (
+                            FvAddressing::buildFvDiagAddress(*this)
+                        );
+    }
+
+    return fvDiagAddress_;
 }

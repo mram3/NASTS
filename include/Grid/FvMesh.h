@@ -47,10 +47,13 @@ private:
     void buildFvMesh(const Grid& mesh);
     void evalGeometry(const Grid& mesh);
 
-    mutable std::shared_ptr<SparseAddress> fvaddress_;
+    mutable std::shared_ptr<SparseAddress> fvAddress_;
+
+    mutable std::shared_ptr<SparseAddress> fvDiagAddress_;
 
     //to initialize boundary condition during field setup
-    std::map<std::string, int> physicalTag_;
+    std::map<std::string, int> fvboundaries_;
+    std::map<std::string, int> fvdomains_;
 
     //to write vtk files during post processing
     std::vector<Node> nodes_;
@@ -64,7 +67,8 @@ public:
     explicit FvMesh(const Grid& mesh);
 
     //getter for field assembly/initialization
-    const std::map<std::string, int>& physicalTag() const {return physicalTag_; }
+    const std::map<std::string, int>& fvboundaries() const {return fvboundaries_; }
+    const std::map<std::string, int>& fvdomains() const {return fvdomains_; }
 
     //getters for FvMatrix assembly
     const std::vector<Face>& faces() const { return faces_; }
@@ -72,5 +76,7 @@ public:
     const int numInternalfaces() const { return numInternalFaces_; }
 
     //Delayed Initialization (created only when a computational method function asks for it)
-    const std::shared_ptr<SparseAddress> fvaddress() const;
+    const std::shared_ptr<SparseAddress> fvAddress() const;
+
+    const std::shared_ptr<SparseAddress> fvDiagAddress() const;
 };

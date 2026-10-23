@@ -18,13 +18,10 @@ Grid readGmshAscii22
 {
     std::ifstream mshFile(filePath);
 
-    if(!mshFile.is_open()){
-        throw std::runtime_error("Error: Can not find the file in : " + filePath);
-    }
-
     std::vector<Node> nodes;
     std::vector<Element> elements;
-    std::map<int, std::string> physicalName;
+    std::map<int, std::string> boundaries;
+    std::map<int, std::string> domains;
 
     std::string line;
 
@@ -64,7 +61,9 @@ Grid readGmshAscii22
                 //removing the " " Gmsh puts around physical names
                 name.erase(std::remove(name.begin(), name.end(), '\"'), name.end());
 
-                physicalName[tag] = name;
+                if(dim == 1) boundaries[tag] = name;
+
+                else if(dim ==2) domains[tag] = name;
             }
         }
 
@@ -138,7 +137,8 @@ Grid readGmshAscii22
     (
         std::move(nodes),
         std::move(elements),
-        std::move(physicalName)
+        std::move(boundaries),
+        std::move(domains)
     );
 }
 
