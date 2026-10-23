@@ -6,6 +6,7 @@
 #include "nlohmann/json.hpp"
 
 #include <vector>
+#include <memory>
 
 class FvMatrix : public CsrMatrix{
 private:
@@ -26,6 +27,17 @@ public:
         ScalarField& phi 
     );
 
+    
+    /// construct from scalar field and sparsity address
+    FvMatrix(
+        ScalarField& phi,
+        std::shared_ptr<SparseAddress> address
+    );
+
+    /// @brief Diagonal Matrix flag
+    bool isDiag = false;
+
+    /// @brief fills face pointers
     void fillValPtrs();
 
     //the prime matrix assembly methods
@@ -62,10 +74,26 @@ public:
     void solve();
 };
 
+//Global Solve methods
+
+void solve(FvMatrix&& eqn);
+
 //Global Operators
 
 FvMatrix& operator== 
 (
     FvMatrix& mat, 
     double b
+);
+
+FvMatrix&& operator== 
+(
+    FvMatrix&& mat, 
+    double b
+);
+
+FvMatrix operator-
+(
+    FvMatrix&& matA,
+    FvMatrix&& matB
 );

@@ -78,4 +78,29 @@ SparseAddress buildFvAddress
         std::move(column_)
     );
 }
+
+SparseAddress buildFvDiagAddress
+(
+    const FvMesh& fvmesh
+)
+{
+    const auto& cells = fvmesh.cells();
+    size_t n = cells.size();
+
+    std::vector<int> rowPtr_(n+1, 0);
+    std::vector<int> column_(n, 0);
+
+    for(size_t i = 0; i < n; ++i){
+        rowPtr_[i] = i;
+        column_[i] = i;
+    }
+    rowPtr_[n] = n;
+
+    return
+    SparseAddress
+    (
+        std::move(rowPtr_),
+        std::move(column_)
+    );
+}
 }

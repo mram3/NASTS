@@ -4,18 +4,32 @@
 
 #include <string>
 #include <algorithm>
+#include <memory>
 
+//Constructors
 FvMatrix::FvMatrix
 (
     ScalarField& phi
 )
-:   CsrMatrix(phi.fvmesh().fvaddress()),
+:   CsrMatrix(phi.fvmesh().fvAddress()),
     phi_(phi),
     source_(phi.scalarVariable.size()),
     oValPtr_(phi.fvmesh().numInternalfaces(), -1),
     nValPtr_(phi.fvmesh().numInternalfaces(), -1)
 {
     fillValPtrs();
+}
+
+FvMatrix::FvMatrix
+(
+    ScalarField& phi,
+    std::shared_ptr<SparseAddress> address
+)
+:   CsrMatrix(address),
+    phi_(phi),
+    source_(phi.scalarVariable.size())
+{
+
 }
 
 void FvMatrix::fillValPtrs()
@@ -100,6 +114,16 @@ void FvMatrix::solve
 
 }
 
+//Global Solve Methods
+
+void solve
+(
+    FvMatrix&& eqn
+)
+{
+    eqn.solve();
+}
+
 //Global operators
 
 FvMatrix& operator==
@@ -117,4 +141,62 @@ FvMatrix& operator==
     }
     
     return eqn;
+}
+
+FvMatrix&& operator==
+(
+    FvMatrix&& eqn,
+    double rhs
+)
+{
+    if(rhs == 0){
+        return std::move(eqn);
+    }
+    
+    for(size_t i = 0; i < eqn.source().size(); ++i){
+        eqn.source()[i] += rhs;
+    }
+    
+    return std::move(eqn);
+}
+
+FvMatrix operator-
+(
+    FvMatrix&& matA,
+    FvMatrix&& matB
+)
+{
+    if(matA.isDiag){
+        const auto& rowPtrB = matB.pattern()->rowPtr();
+        const auto& rowPtrA = matA.pattern()->rowPtr();
+        const auto& valuesA = matA.values();
+        auto& valuesB = matB.values();
+        const auto& sourceA = matA.source();
+        auto& sourceB = matB.source();
+
+        for(size_t i = 0; i < matA.source().size(); ++i){
+            sourceB[i] += sourceA[i];
+
+            valuesB[rowPtrB[i]] += valuesA[rowPtrA[i]];
+        }
+
+        return std::move(matB);
+    }
+
+    else if(matB.isDiag){
+        const auto& rowPtrA = matA.pattern()->rowPtr();
+        const auto& rowPtrB = matB.pattern()->rowPtr();
+        const auto& valuesB = matB.values();
+        auto& valuesA = matA.values();
+        const auto& sourceB = matB.source();
+        auto& sourceA = matA.source();
+
+        for(size_t i = 0; i < matB.source().size(); ++i){
+            sourceA[i] += sourceB[i];
+
+            valuesA[rowPtrB[i]] += valuesB[rowPtrA[i]];
+        }
+
+        return std::move(matA);
+    }
 }
