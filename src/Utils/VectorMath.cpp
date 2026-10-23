@@ -1,5 +1,7 @@
 #include "Utils/VectorMath.h"
 
+#include <cmath>
+
 namespace VectorMath
 {
 
@@ -52,5 +54,20 @@ void daxpy
     for(size_t i = 0; i < x.size(); ++i){
         y[i] += a * x[i];
     }
+}
+
+double L2Norm
+(
+    const std::vector<double>& a, 
+    const std::vector<double>& b
+)
+{
+    double norm = 0.0;
+    for(int i = 0; i < a.size(); ++i)
+    {
+        norm += (a[i] - b[i]) * (a[i] - b[i]);
+    }
+
+    return std::sqrt(norm);
 }
 }

@@ -31,4 +31,10 @@ namespace VectorMath{
         std::vector<double>& y
     );
 
+    double L2Norm
+    (
+        const std::vector<double>& a, 
+        const std::vector<double>& b
+    );
+
 }
