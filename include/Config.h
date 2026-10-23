@@ -14,6 +14,9 @@ private:
 
     //private constructor (Singleton)
     Config() {}
+
+    //To check if the absolutely necessary information are in usr input before starting simulation
+    void checkInput() const;
     
 public:
 
@@ -24,7 +27,7 @@ public:
         return inst;
     }
 
-    //To read the user json file at the start of the program via get()
+    //To read the user json file at the start of the program via access()
     void read(const std::string& filePath)
     {
         std::ifstream file(filePath);
@@ -33,11 +36,11 @@ public:
             throw std::runtime_error("Input file not found: " + filePath);
         }
         data_ = nlohmann::json::parse(file);
+
+        //Immediately validate the input file before moving on to heavy functions
+        checkInput();
     }
 
-    //To check if the absolutely necessary information are in usr input before starting simulation
-    void check() const;
-
-    //getter to send user provided information to multiple classes via get()
+    //getter to send user provided information to multiple classes via access()
     const nlohmann::json& data() const {return data_; }
 };
