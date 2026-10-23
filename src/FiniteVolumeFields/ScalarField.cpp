@@ -20,9 +20,9 @@ void ScalarField::create
         std::string boundaryName = item.key();
         auto bcDetail = item.value();
 
-        auto findTag = fvmesh_.physicalTag().find(boundaryName);
+        auto findTag = fvmesh_.fvboundaries().find(boundaryName);
 
-        if(findTag == fvmesh_.physicalTag().end()){
+        if(findTag == fvmesh_.fvboundaries().end()){
             throw std::runtime_error
             (
                 "Can't find the boundary : " + boundaryName + " specified in input in .msh file"
