@@ -17,9 +17,10 @@ int main(){
     try{
         Grid mesh = MeshReader::readGmshAscii22("tests/assets/cavity.msh");
 
-        auto nodes = mesh.nodes();
-        auto elements = mesh.elements();
-        auto phyNames = mesh.physicalName();
+        const auto& nodes = mesh.nodes();
+        const auto& elements = mesh.elements();
+        const auto boundaries = mesh.boundaries();
+        const auto domains = mesh.domians();
 
         EXPECT_EQ
         (
@@ -37,17 +38,24 @@ int main(){
 
         EXPECT_EQ
         (
-            phyNames.size(),
-            3,
+            boundaries.size(),
+            2,
+            "No. of Physical Names"
+        );
+
+        EXPECT_EQ
+        (
+            domains.size(),
+            1,
             "No. of Physical Names"
         );
 
         //checking if the physical names are mapped correctly
         EXPECT_TRUE
         (
-            phyNames[5] == "Lid" &&
-            phyNames[6] == "Walls" &&
-            phyNames[7] == "InternalField",
+            boundaries.at(5) == "Lid" &&
+            boundaries.at(6) == "Walls" &&
+            domains.at(7) == "InternalField",
 
             "Physical Name"
         );

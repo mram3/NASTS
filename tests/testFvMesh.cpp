@@ -25,7 +25,8 @@ int main(){
         const auto& faces = fvmesh.faces();
         const auto& cells = fvmesh.cells();
         const auto& numInFace = fvmesh.numInternalfaces();
-        const auto& physicalTag = fvmesh.physicalTag();
+        const auto& boundaries = fvmesh.fvboundaries();
+        const auto& domains = fvmesh.fvdomains();
 
         EXPECT_EQ
         (
@@ -75,9 +76,9 @@ int main(){
 
         EXPECT_TRUE
         (
-            physicalTag.at("Lid") == 5 &&
-            physicalTag.at("Walls") == 6 &&
-            physicalTag.at("InternalField") == 7,
+            boundaries.at("Lid") == 5 &&
+            boundaries.at("Walls") == 6 &&
+            domains.at("InternalField") == 7,
             "Physical Tag"
         );
 
@@ -153,45 +154,3 @@ bool faceArea
 
     return true;
 }
-/*
-    //checking the Field class
-
-    ScalarField p("Pressure", mesh);
-    VectorField U("Velocity", mesh);
-
-    for(const auto& face : faces){
-        if(face.physicalTag == -1){
-            p.boundaryConditionMap[-1] = {BoundaryConditionType::None, 0.0};
-            U.boundaryConditionMap[-1] = {BoundaryConditionType::None, {0.5, 0.5}};
-        }
-        else if(face.physicalTag == 5){
-            p.boundaryConditionMap[5] = {BoundaryConditionType::Neumann, 0.0};
-            U.boundaryConditionMap[5] = {BoundaryConditionType::Dirichlet, {1.0, 0.0}};
-        }
-        else if(face.physicalTag == 6){
-            p.boundaryConditionMap[6] = {BoundaryConditionType::Dirichlet, 0.0};
-            U.boundaryConditionMap[6] = {BoundaryConditionType::Dirichlet, {0.0, 0.0}};
-        }
-    }
-
-    cout << "\n--Field Details--\n";
-
-    cout << "\nSuccessfully filled " << p.scalarVariable.size() << " cells with " 
-         << p.getFieldName() << " field\n";
-
-    cout << "\nSuccessfully filled " << U.vectorVariable.size() << " cells with " 
-         << U.getFieldName() << " field\n";
-
-    auto id = U.boundaryConditionMap.find(5);
-    double u = id->second.value.x;
-    double v = id->second.value.y;
-
-    cout << "\nBoundary Condition for " << U.getFieldName() << " at " << phyNames[5]
-         << " is " << u << " in x dirn and " << v << " in y dirn\n";
-
-    auto it = p.boundaryConditionMap.find(5);
-    double pressure = it->second.value;
-
-    cout << "\nBoundary Condition for " << p.getFieldName() << " at " << phyNames[5]
-         << " is " << pressure << endl;*/
-
