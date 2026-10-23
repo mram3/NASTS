@@ -7,9 +7,15 @@
 class Laplacian : public Applications
 {
 private:
-    FvMesh mesh_;
+    FvMesh fvmesh_;
     ScalarField phi_;
     double gamma_;
+
+    /// @brief initialize the scalar field
+    void createField() override;
+
+    /// @brief check the user input file
+    void check() const override;
 
 public:
     //Destructor
@@ -18,9 +24,8 @@ public:
     //Constructor
     Laplacian();
 
-    //initialize the scalar field
-    void createField();
-
     //Prime Driver
     void run() override;
+
+    const FvMesh& fvmesh() const {return fvmesh_; }
 };

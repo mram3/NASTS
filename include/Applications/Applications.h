@@ -9,6 +9,10 @@ public:
     //Destructor
     virtual ~Applications() = default;
 
+    virtual void check() const = 0;
+
+    virtual void createField() = 0;
+
     virtual void run() = 0;
 
     static std::unique_ptr<Applications> make

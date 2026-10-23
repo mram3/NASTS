@@ -11,9 +11,10 @@ Laplacian::Laplacian
 (
 
 ) 
-:   mesh_(),
-    phi_(Config::access().data()["Fields"].begin().key(), mesh_)
+:   fvmesh_(),
+    phi_(Config::access().data()["Fields"].begin().key(), fvmesh_)
 {
+    check();
     gamma_ = Config::access().data()["Gamma"];
 }
 
@@ -30,14 +31,9 @@ void Laplacian::run
 
     for(int i = 0; i <= nNOC; ++i){
 
-        FvMatrix TEqn = 
-        (
-            implicitAssembly::laplacian(gamma_, phi_)
+        solve(
+            implicitAssembly::laplacian(gamma_, phi_) == source
         );
-
-        TEqn == source;
-
-        TEqn.solve();
     }
 
     std::cout << "Solution successfully converged\n";
