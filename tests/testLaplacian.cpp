@@ -3,7 +3,7 @@
 #include "Grid/MeshReader.h"
 #include "Matrix/FvMatrix.h"
 #include "FiniteVolumeFields/ScalarField.h"
-#include "FiniteVolumeMethods/implicitAssembly.h"
+#include "FiniteVolumeMethods/implicitAssembly/implicitAssembly.h"
 #include "Algebra/Solvers/LinearSolvers.h"
 #include "nlohmann/json.hpp"
 
@@ -58,7 +58,7 @@ int main(){
         EXPECT_TRUE
         (
             std::abs(result1[12] - 400.0) < 1e-10,
-            "Laplacian Assembly and Solve Method works fine with Dirichlet BC"
+            "Laplacian Assembly and Solve Method with Dirichlet BC"
         );
 
         //solve a field with Neumann BC
@@ -99,7 +99,7 @@ int main(){
         EXPECT_TRUE
         (
             std::abs(result2[12] - 500.0) < 1e-10,
-            "Laplacian Assembly and Solve Method works fine with Neumann BC"
+            "Laplacian Assembly and Solve Method with Neumann BC"
         );
     }
     catch(const std::exception& e)

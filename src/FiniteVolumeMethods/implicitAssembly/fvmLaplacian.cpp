@@ -1,5 +1,5 @@
-#include "FiniteVolumeMethods/implicitAssembly.h"
-#include "FiniteVolumeMethods/explicitCalc.h"
+#include "FiniteVolumeMethods/implicitAssembly/implicitAssembly.h"
+#include "FiniteVolumeMethods/explicitCalc/explicitCalc.h"
 #include "FiniteVolumeFields/ScalarField.h"
 #include "FiniteVolumeFields/VectorField.h"
 

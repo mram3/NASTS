@@ -5,7 +5,7 @@
 #include "Grid/Grid.h"
 #include "Grid/MeshReader.h"
 #include "Type.h"
-#include "FiniteVolumeMethods/explicitCalc.h"
+#include "FiniteVolumeMethods/explicitCalc/explicitCalc.h"
 
 #include <iostream>
 #include <string>

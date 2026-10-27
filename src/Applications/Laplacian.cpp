@@ -1,6 +1,6 @@
 #include "Applications/Laplacian.h"
 #include "Matrix/FvMatrix.h"
-#include "FiniteVolumeMethods/implicitAssembly.h"
+#include "FiniteVolumeMethods/implicitAssembly/implicitAssembly.h"
 #include "Config.h"
 #include "Type.h"
 

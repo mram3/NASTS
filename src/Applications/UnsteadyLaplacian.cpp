@@ -1,6 +1,6 @@
 #include "Applications/UnsteadyLaplacian.h"
 #include "Matrix/FvMatrix.h"
-#include "FiniteVolumeMethods/implicitAssembly.h"
+#include "FiniteVolumeMethods/implicitAssembly/implicitAssembly.h"
 #include "Controls/Time.h"
 #include "Controls/SteadyControl.h"
 #include "Config.h"

@@ -1,11 +1,13 @@
-#include "FiniteVolumeMethods/implicitAssembly.h"
+#include "FiniteVolumeMethods/implicitAssembly/DdtSchemes/EulerDdt.h"
+#include "FiniteVolumeMethods/implicitAssembly/implicitAssembly.h"
 #include "FiniteVolumeFields/ScalarField.h"
 #include "Matrix/FvMatrix.h"
 #include "Config.h"
 
 namespace implicitAssembly
 {
-FvMatrix EulerDdt
+
+FvMatrix EulerDdt::Ddt
 (
     double rho,
     ScalarField& phi
@@ -29,4 +31,5 @@ FvMatrix EulerDdt
 
     return Mat;
 }
+
 } // namespace implicitAssembly

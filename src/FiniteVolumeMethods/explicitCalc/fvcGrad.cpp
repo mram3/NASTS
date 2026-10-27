@@ -1,4 +1,4 @@
-#include "FiniteVolumeMethods/explicitCalc.h"
+#include "FiniteVolumeMethods/explicitCalc/explicitCalc.h"
 
 #include <cmath>
 
@@ -21,7 +21,6 @@ VectorField grad
     int numFaces  = faces.size();
 
     VectorField gradPhi("gradPhi", phi.fvmesh());
-    //VectorField oldGradPhi("oldGradPhi", phi.fvmesh());//to store previous corrected value
 
     //Correction Step is explicitly hardcoded to 2 following advice in the book
     //" Doing excessive number of iterations may cause oscillations and usually not more than 
