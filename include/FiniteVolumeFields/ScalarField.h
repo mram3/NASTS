@@ -2,18 +2,25 @@
 
 #include "FieldSpace.h"
 #include "Type.h"
+#include "Config.h"
 #include "nlohmann/json.hpp"
 
 #include <vector>
 #include <map>
+#include <string>
 
 class ScalarField : public FieldSpace
 {
+private:
+    int size_;
+    bool initTooOld_ = false;
+
 public:
 
     //storage for physical variables like pressure, Temperature etc.,
     std::vector<double> scalarVariable;
     std::vector<double> oldScalarVariable;
+    std::vector<double> tooOldScalarVariable;
 
     //mapping user provided bc tag and the bc type and value
     std::map<int, BoundaryCondition<double>> boundaryConditionMap;
@@ -24,12 +31,14 @@ public:
         std::string fieldName, 
         const FvMesh& mesh
     )
-        : FieldSpace(fieldName, mesh) 
+    :   FieldSpace(fieldName, mesh),
+        size_(mesh.cells().size())
     {
-        int numCells = mesh.cells().size();
+        scalarVariable.assign(size_, 0.0);
 
-        scalarVariable.assign(numCells, 0.0);
-        oldScalarVariable.assign(numCells, 0.0);
+        std::string scheme = Config::access().data()["Time"]["Scheme"];
+
+        if(scheme == "SOUE") initTooOld_ = true;
     };
 
     //creates scalar field from config
@@ -39,5 +48,5 @@ public:
     );
     
     //helper function when i want to store old values of scalar quantities
-
+    void storeField();
 };

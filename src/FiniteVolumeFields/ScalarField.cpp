@@ -1,4 +1,5 @@
 #include "FiniteVolumeFields/ScalarField.h"
+#include "Config.h"
 
 void ScalarField::create
 (
@@ -20,16 +21,7 @@ void ScalarField::create
         std::string boundaryName = item.key();
         auto bcDetail = item.value();
 
-        auto findTag = fvmesh_.fvboundaries().find(boundaryName);
-
-        if(findTag == fvmesh_.fvboundaries().end()){
-            throw std::runtime_error
-            (
-                "Can't find the boundary : " + boundaryName + " specified in input in .msh file"
-            );
-        }
-
-        int tag = findTag->second;
+        int tag = fvmesh_.fvboundaries().at(boundaryName);
 
         std::string bcType = bcDetail["Type"];
         double bcValue = bcDetail["Value"];
@@ -55,4 +47,21 @@ void ScalarField::create
             );
         }
     }
+}
+
+void ScalarField::storeField
+(
+
+)
+{
+    if(initTooOld_){
+        if(tooOldScalarVariable.empty()){
+            tooOldScalarVariable = scalarVariable;
+        }
+        else{
+            tooOldScalarVariable = oldScalarVariable;
+        }
+    }
+
+    oldScalarVariable = scalarVariable;
 }
