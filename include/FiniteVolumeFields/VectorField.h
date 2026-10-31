@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FieldSpace.h"
+#include "Config.h"
 #include "Type.h"
 
 #include <vector>
@@ -30,4 +31,9 @@ public:
         oldVectorVariable.assign(numCells, {0.0, 0.0});
     }
     
+    //creates velocity vector field from config
+    void createVelocityField
+    (
+        const nlohmann::json& fieldConfig
+    );
 };
