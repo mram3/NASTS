@@ -22,3 +22,22 @@ public:
         const std::vector<double>& r
     ) const override;
 };
+
+class sgsPrecond : public Preconditioners
+{
+public:
+    void setup
+    (
+        const CsrMatrix& A
+    ) override;
+
+    void apply
+    (
+        std::vector<double>& z, 
+        const std::vector<double>& r
+    )const override;
+
+private:
+    std::vector<double> invDiag_;
+    const CsrMatrix* matPtr_ = nullptr;
+};

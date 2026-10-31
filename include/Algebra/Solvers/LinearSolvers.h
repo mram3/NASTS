@@ -3,6 +3,7 @@
 #include "Matrix/CsrMatrix.h"
 #include "Algebra/Preconditioners/Preconditioners.h"
 #include "nlohmann/json.hpp"
+#include "Type.h"
 
 #include <memory>
 #include <vector>
@@ -35,12 +36,12 @@ public:
     {}
 
     //The prime solver method which solves our A*x = b iteratively
-    virtual void solve
+    virtual SolverPerf solve
     (
         const CsrMatrix& A,
         const std::vector<double>& b,
         std::vector<double>& x
-    ) const = 0;
+    ) = 0;
 
     //Solvers Factory
     static std::unique_ptr<LinearSolvers> make

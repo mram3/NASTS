@@ -3,71 +3,78 @@
 
 #include <cmath>
 
-void PCG::solve
+SolverPerf PCG::solve
 (
     const CsrMatrix& A,
     const std::vector<double>& b,
     std::vector<double>& x
-) const
+)
 {
     //setting up M^-1 ~ A^-1
     precond_->setup(A);
 
     int n = b.size();
     
-    std::vector<double> r(n, 0.0);//residual vector
-    std::vector<double> z(n, 0.0);//preconditioned residual
-    std::vector<double> p(n, 0.0);//search direction
-    std::vector<double> Ax(n, 0.0);
-    std::vector<double> Ap(n, 0.0);
+    if(r_.empty()){
+        r_.assign(n, 0.0);//residual vector
+        z_.assign(n, 0.0);//preconditioned residual
+        p_.assign(n, 0.0);//search direction
+        Ax_.assign(n, 0.0);
+        Ap_.assign(n, 0.0);
+    }
 
-    A.SpMV(x, Ax);
-    VectorMath::sub(b, Ax, r);
-    precond_->apply(z, r);
-    p = z;
+    A.SpMV(x, Ax_);
+    VectorMath::sub(b, Ax_, r_);
+    precond_->apply(z_, r_);
+    p_ = z_;
 
     //checking the initial residual
-    double res = VectorMath::dot(r, r);
-    res = std::sqrt(res);
+    double res = VectorMath::L2Norm(r_);
     double res0 = res;
-    if(res0 < tolerance_) return;
+    if(res0 < tolerance_) return SolverPerf{res0, res, 0};
 
-    double rz = VectorMath::dot(r, z);
+    double rz = VectorMath::dot(r_, z_);
     int iter = 0;
 
     while
     (
         iter < maxIter_ &&
         res > tolerance_ &&
-        res/res0 > relTol_
+        res > relTol_ * res0
     )
     {
-        A.SpMV(p, Ap);
+        A.SpMV(p_, Ap_);
 
-        double pAp = VectorMath::dot(p, Ap);
+        double pAp = VectorMath::dot(p_, Ap_);
         double alpha = rz/pAp;
 
         //update x and residual
         for(int i = 0; i < n; ++i){
-            x[i] = x[i] + alpha * p[i];
-            r[i] = r[i] - alpha * Ap[i];
+            x[i] = x[i] + alpha * p_[i];
+            r_[i] = r_[i] - alpha * Ap_[i];
         }
 
-        precond_->apply(z, r);
+        precond_->apply(z_, r_);
 
-        double curr_rz = VectorMath::dot(r, z);
+        double curr_rz = VectorMath::dot(r_, z_);
         
         double beta = curr_rz/rz;
 
         //update search direction
         for(int i = 0; i < n; ++i){
-            p[i] = z[i] + beta*p[i];
+            p_[i] = z_[i] + beta*p_[i];
         }
 
         rz = curr_rz;
 
-        res = VectorMath::dot(r, r);
+        res = VectorMath::dot(r_, r_);
         res = std::sqrt(res);
         iter++;
     }
+
+    return 
+    SolverPerf
+    {
+        res0, res, iter
+    };
 }
