@@ -4,12 +4,16 @@
 #include "Matrix/FvMatrix.h"
 #include "FiniteVolumeFields/ScalarField.h"
 #include "Controls/Time.h"
+#include "Controls/Output.h"
 
 class UnsteadyLaplacian : public Applications
 {
 private:
     FvMesh fvmesh_;
-    ScalarField phi_;
+    Time time_;
+    Output output_;
+
+    std::unique_ptr<ScalarField> phi_;
     double gamma_;
     double rho_;
 

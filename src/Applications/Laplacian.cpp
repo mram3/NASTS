@@ -32,7 +32,7 @@ void Laplacian::run
     for(int i = 0; i <= nNOC; ++i){
 
         solve(
-            implicitAssembly::laplacian(gamma_, phi_) == source
+            -implicitAssembly::laplacian(gamma_, phi_) == source
         );
     }
 

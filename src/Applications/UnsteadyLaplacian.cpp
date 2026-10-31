@@ -14,11 +14,15 @@ UnsteadyLaplacian::UnsteadyLaplacian
 
 )
 : fvmesh_(),
-  phi_(Config::access().data()["Fields"].begin().key(), fvmesh_)
+  time_(),
+  output_(fvmesh_, time_)
 {
     check();
     gamma_ = Config::access().data()["Gamma"];
     rho_   = Config::access().data()["Rho"];
+
+    std::string fieldName = Config::access().data()["Fields"].begin().key();
+    phi_ = std::make_unique<ScalarField>(fieldName, fvmesh_);
 }
 
 void UnsteadyLaplacian::run
@@ -27,34 +31,41 @@ void UnsteadyLaplacian::run
 )
 {
     createField();
-    Time time;
     SteadyControl steadystate;
 
     double source = Config::access().data().value("Source", 0.0);
 
     int nNOC = Config::access().data().value("nNonOrthogonalCorrections", 0);
 
-    while(time.isRunning()){
+    //storing the initial condition
+    output_.writeVtk(true);
+
+    while(time_.isRunning()){
+
+        phi_->storeField();
 
         for(int i = 0; i <= nNOC; ++i){
 
             solve(
-                implicitAssembly::Ddt(rho_, phi_) - 
-                implicitAssembly::laplacian(gamma_, phi_) == source
+                implicitAssembly::Ddt(rho_, *phi_) - 
+                implicitAssembly::laplacian(gamma_, *phi_) == source
             );
         }
 
-        std::cout << "Time : " << time.currTime() <<" | Temperature: " 
-                  << phi_.scalarVariable[12] << "\n\n";
-
-        if(steadystate.isReached(phi_))
+        if(steadystate.isReached(*phi_))
         {
-            std::cout << "Steady State is reached at time: " << time.currTime() << "\n";
+            if(time_.isSteadySolve()){
+                std::cout << "Steady State is reached at iteration: " << time_.currIter() << "\n";
+            }
+            else{
+                std::cout << "Steady State is reached at time: " << time_.currTime() << "\n";
+            }
+            //storing the steady state convergence
+            output_.writeVtk(true);
             break;
-        } 
+        }
 
-        phi_.oldScalarVariable = phi_.scalarVariable;
-
+        output_.writeVtk();
     }
 }
 
@@ -64,8 +75,10 @@ void UnsteadyLaplacian::createField
 )
 {
 
-    auto fieldName = phi_.fieldName();
+    auto fieldName = phi_->fieldName();
     auto fieldConfig = Config::access().data()["Fields"][fieldName];
 
-    phi_.create(fieldConfig);
+    phi_->create(fieldConfig);
+
+    output_.registerScalar(*phi_);
 }

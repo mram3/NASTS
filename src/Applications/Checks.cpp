@@ -1,5 +1,6 @@
 #include "Applications/Laplacian.h"
 #include "Applications/UnsteadyLaplacian.h"
+#include "Applications/ScalarTransport.h"
 #include "Grid/FvMesh.h"
 #include "Config.h"
 
@@ -284,6 +285,20 @@ void Laplacian::check
 }
 
 void UnsteadyLaplacian::check
+(
+
+) const
+{
+    const auto& data = Config::access().data();
+
+    checkGamma(data);
+    checkSource(data);
+    checkNOC(data);
+    checkTime(data);
+    checkBC(data, fvmesh_);
+}
+
+void ScalarTransport::check
 (
 
 ) const
