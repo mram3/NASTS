@@ -70,4 +70,18 @@ double L2Norm
 
     return std::sqrt(norm);
 }
+
+double L2Norm
+(
+    const std::vector<double>& r
+)
+{
+    double norm = 0.0;
+    for(int i = 0; i < r.size(); ++i)
+    {
+        norm += r[i]*r[i];
+    }
+
+    return std::sqrt(norm);
+}
 }
