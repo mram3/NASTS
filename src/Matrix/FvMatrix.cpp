@@ -1,10 +1,12 @@
 #include "Matrix/FvMatrix.h"
-#include "Config.h"
+#include "Algebra/Solvers/SolverConfig.h"
 #include "Algebra/Solvers/LinearSolvers.h"
+#include "Type.h"
 
 #include <string>
 #include <algorithm>
 #include <memory>
+#include <iostream>
 
 //Constructors
 FvMatrix::FvMatrix
@@ -104,14 +106,22 @@ void FvMatrix::solve
     //name of the field eqn is solved for
     std::string fieldName = phi_.fieldName();
 
-    //Choosing the solver for the specific field
-    auto settings = Config::access().data()["LinearSolvers"][fieldName];
+    try
+    {
+        //Choosing the solver for the specific field
+        LinearSolvers& solver = SolverConfig::access().solver(fieldName);
+        
+        std::cout << "Solving for " + fieldName << "\n";
+        SolverPerf perf = solver.solve(*this, source_, phi_.scalarVariable);
 
-    //calling the solver
-    auto solver = LinearSolvers::make(settings);
-
-    solver->solve(*this, source_, phi_.scalarVariable);
-
+        std::cout << "Initial Residual : " << perf.initRes << "\n"
+                  << "Final Residual   : " << perf.finalRes << "\n"
+                  << "No of Iterations : " << perf.iter << "\n\n";
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << " for " << fieldName << '\n';
+    }
 }
 
 //Global Solve Methods
@@ -162,6 +172,18 @@ FvMatrix&& operator==
 
 FvMatrix operator-
 (
+    FvMatrix&& matA
+)
+{
+    for(double& val : matA.values()) val = -val;
+
+    for(double& b : matA.source()) b = -b;
+
+    return std::move(matA);
+}
+
+FvMatrix operator+
+(
     FvMatrix&& matA,
     FvMatrix&& matB
 )
@@ -199,4 +221,29 @@ FvMatrix operator-
 
         return std::move(matA);
     }
+
+    const auto& valuesB = matB.values();
+    auto& valuesA = matA.values();
+    const auto& sourceB = matB.source();
+    auto& sourceA = matA.source();
+
+    for(size_t i = 0; i < matA.values().size(); ++i){
+        valuesA[i] += valuesB[i];
+    }
+    for(size_t i = 0; i < matA.source().size(); ++i){
+        sourceA[i] += sourceB[i];
+    }
+
+    return std::move(matA);
+}
+
+FvMatrix operator-
+(
+    FvMatrix&& matA,
+    FvMatrix&& matB
+)
+{
+    return 
+
+    std::move(matA) + (-std::move(matB));
 }

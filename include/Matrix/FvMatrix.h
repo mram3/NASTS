@@ -94,6 +94,17 @@ FvMatrix&& operator==
 
 FvMatrix operator-
 (
+    FvMatrix&& matA
+);
+
+FvMatrix operator-
+(
+    FvMatrix&& matA,
+    FvMatrix&& matB
+);
+
+FvMatrix operator+
+(
     FvMatrix&& matA,
     FvMatrix&& matB
 );
