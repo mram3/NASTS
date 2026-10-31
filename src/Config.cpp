@@ -96,17 +96,18 @@ void Config::checkInput
         );
     }
 
-    for(auto& [name, settings] : data_["Fields"].items())
+    for(auto& [name, settings] : data_["LinearSolvers"].items())
     {
-        if(!data_["LinearSolvers"].contains(name))
+        if(!data_["Fields"].contains(name))
         {
             throw std::runtime_error
             (
-                "CONFIG ERROR: Missing \"" + name + "\" section inside \"LinearSolvers\"\n"
+                "CONFIG ERROR: Missing \"" + name + "\" defined in \"LinearSolvers\"\n in "
+                "\"Fields\" Block"
             );
         }
 
-        if(!data_["LinearSolvers"][name].is_object())
+        if(!settings.is_object())
         {
             throw std::runtime_error
             (
@@ -116,7 +117,7 @@ void Config::checkInput
             );
         }
 
-        if(!data_["LinearSolvers"][name].contains("Solver"))
+        if(!settings.contains("Solver"))
         {
             throw std::runtime_error
             (
