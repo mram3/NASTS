@@ -46,17 +46,19 @@ FvMatrix laplacian
         //      after simplification, a_nb = gamma_f * Af / nf * e_zeta
         double a_nb = gamma*face.face_area/(std::abs(denominator));
 
-        Mat.addDiagCoeffs(oID, a_nb);
-        Mat.addDiagCoeffs(nID, a_nb);
-        Mat.addOffDiagCoeffs(i, -a_nb, -a_nb);
+        Mat.addDiagCoeffs(oID, -a_nb);
+        Mat.addDiagCoeffs(nID, -a_nb);
+        Mat.addOffDiagCoeffs(i, a_nb, a_nb);
 
         //Secondary Gradient
         // T = Af - E (first evaluate T)
 
         double xA = face.face_area_x;
         double yA = face.face_area_y;
-        double xE = a_nb * dx / gamma;//E is just the geometric part of a_nb
-        double yE = a_nb * dy / gamma;//just projecting it and dividing by gamma 
+        double xE = face.face_area * dx /(std::abs(denominator));
+        double yE = face.face_area * dy /(std::abs(denominator));
+        //double xE = a_nb * dx / gamma;//E is just the geometric part of a_nb
+        //double yE = a_nb * dy / gamma;//just projecting it and dividing by gamma 
             
         double xT = xA - xE;
         double yT = yA - yE;
@@ -105,8 +107,8 @@ FvMatrix laplacian
         double sG = gamma * (xT * xGradPhif + yT * yGradPhif);
 
         //add it to the source term (rhs)
-        Mat.addSource(oID, sG);
-        Mat.addSource(nID, -sG);
+        Mat.addSource(oID, -sG);
+        Mat.addSource(nID, +sG);
     }
 
     for(int b = numInFace; b < numFaces; ++b){
@@ -140,8 +142,10 @@ FvMatrix laplacian
             // A = E + T (T is )
             double xA = face.face_area_x;
             double yA = face.face_area_y;
-            double xE = a_nb * dx / gamma;
-            double yE = a_nb * dy / gamma; 
+            double xE = face.face_area * dx /(std::abs(denominator));
+            double yE = face.face_area * dy /(std::abs(denominator));
+            //double xE = a_nb * dx / gamma;
+            //double yE = a_nb * dy / gamma; 
     
             double xT = xA - xE;
             double yT = yA - yE;
@@ -157,8 +161,8 @@ FvMatrix laplacian
             //b = add to the source term
             double b = (a_nb * bcValue) + sG;
 
-            Mat.addDiagCoeffs(oID, a_nb);
-            Mat.addSource(oID, b);
+            Mat.addDiagCoeffs(oID, -a_nb);
+            Mat.addSource(oID, -b);
         }
         //if(bcType == BoundaryConditionType::Dirichlet){
         //
@@ -171,7 +175,7 @@ FvMatrix laplacian
         //}
         else if(bcType == BoundaryConditionType::Neumann){
             double b = gamma*face.face_area*bcValue;
-            Mat.addSource(oID, b);
+            Mat.addSource(oID, -b);
         }
     }
 
