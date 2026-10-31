@@ -7,6 +7,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <algorithm>
+#include <iostream>
 
 namespace MeshReader
 {
@@ -16,6 +17,8 @@ Grid readGmshAscii22
     const std::string& filePath
 )
 {
+    std::cout << "Reading the mesh file " + filePath + "\n";
+
     std::ifstream mshFile(filePath);
 
     std::vector<Node> nodes;
@@ -130,6 +133,8 @@ Grid readGmshAscii22
     }
 
     mshFile.close();
+
+    std::cout << "Mesh File read\n\n";
 
     //construct grid and return
     return

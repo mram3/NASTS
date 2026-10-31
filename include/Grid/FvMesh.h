@@ -75,6 +75,9 @@ public:
     const std::vector<Cell>& cells() const { return cells_; }
     const int numInternalfaces() const { return numInternalFaces_; }
 
+    //getter for output write
+    const std::vector<Node>& nodes() const {return nodes_; }
+
     //Delayed Initialization (created only when a computational method function asks for it)
     const std::shared_ptr<SparseAddress> fvAddress() const;
 
