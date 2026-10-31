@@ -1,28 +1,21 @@
-#include "FiniteVolumeMethods/implicitAssembly/implicitAssembly.h"
-#include "FiniteVolumeFields/ScalarField.h"
-#include "FiniteVolumeFields/VectorField.h"
-#include "Type.h"
+#include "FiniteVolumeMethods/implicitAssembly/ConvectionSchemes/Upwind.h"
 
 namespace implicitAssembly
 {
 
-FvMatrix div
+FvMatrix Upwind::div
 (
-    double rho,
-    ScalarField& phi,
-    VectorField& U
-)
+    SurfaceScalarField& flux,
+    ScalarField& phi
+) const
 {
-    // initializing full spatial matrix array
+    //initializing full spatial matrix array
     FvMatrix mat(phi);
 
     const auto& cells = phi.fvmesh().cells();
     const auto& faces = phi.fvmesh().faces();
     int numInFaces = phi.fvmesh().numInternalfaces();
     int n = faces.size();
-
-    double u = U.vectorVariable[0].x;
-    double v = U.vectorVariable[0].y;
 
     // brief Upwind Differencing Scheme
     for(int i = 0; i < numInFaces; ++i){//looping through internal faces
@@ -31,10 +24,7 @@ FvMatrix div
         int oID = face.ownerCellID;
         int nID = face.neighborCellID;
 
-        //Velocity normal to the face
-        double vN = u * face.face_normal_x + v * face.face_normal_y;
-        double M  = rho * vN * face.face_area;
-
+        double M = flux.faceValues[i];
         if(M > 0){
             mat.addDiagCoeffs(oID, M);
             mat.addOffDiagCoeffs(i, 0.0, -M);
@@ -56,8 +46,7 @@ FvMatrix div
         auto bcType = id->second.bc;
         auto bcValue = id->second.value;
 
-        double vN = u * face.face_normal_x + v * face.face_normal_y;
-        double M = rho * vN * face.face_area;
+        double M = flux.faceValues[b];
         if(bcType == BoundaryConditionType::Dirichlet){
 
             if(M < 0){
@@ -79,5 +68,4 @@ FvMatrix div
 
     return mat;
 }
-
-}
+};
