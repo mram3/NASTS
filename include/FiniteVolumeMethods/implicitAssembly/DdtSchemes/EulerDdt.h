@@ -13,7 +13,7 @@ public:
     (
         double rho,
         ScalarField& phi
-    );
+    ) override;
 };
 
 }

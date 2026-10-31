@@ -1,0 +1,19 @@
+#pragma once
+
+#include "FiniteVolumeMethods/implicitAssembly/DdtSchemes/DdtSchemes.h"
+
+namespace implicitAssembly
+{
+
+class SteadyStateDdt : public DdtSchemes
+{
+public:
+
+    FvMatrix Ddt
+    (
+        double rho,
+        ScalarField& phi
+    ) override;
+};
+
+}

@@ -4,6 +4,8 @@
 #include "Matrix/FvMatrix.h"
 #include "Config.h"
 
+#include <iostream>
+
 namespace implicitAssembly
 {
 
