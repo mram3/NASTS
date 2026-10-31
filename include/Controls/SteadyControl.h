@@ -5,12 +5,11 @@
 class SteadyControl
 {
 private:
-    double initRes_;
     double ssTol_;
-    double ssRelTol_;
     double currRes_;
 
-    bool reachSteadyState = false;
+    bool reachSteadyState_ = false;
+    bool isSteadySolve_ = false;
 
 public:
     //construct from config file

@@ -6,20 +6,31 @@ SteadyControl::SteadyControl
 (
 
 )
-:   reachSteadyState(Config::access().data()["Time"].contains("SteadyState"))
 {
-    if(reachSteadyState)
+    if(Config::access().data()["Time"].contains("SteadyState")){
+        reachSteadyState_ = true;
+    }
+    if(Config::access().data()["Time"]["Scheme"] == "SteadyState"){
+        isSteadySolve_ = true;
+    }
+
+    if(reachSteadyState_)
     {
         auto sSettings = Config::access().data()["Time"]["SteadyState"];
 
         ssTol_ = sSettings.value("Tolerance", 1e-6);
-        ssRelTol_ = sSettings.value("RelTol", 0.0);
+    }
+
+    if(isSteadySolve_){
+        auto tSettings = Config::access().data()["Time"];
+
+        ssTol_ = tSettings.value("Tolerance", 1e-6);
     }
 }
 
 bool SteadyControl::isReached(const ScalarField& phi)
 {
-    if(!reachSteadyState) return false;
+    if(!reachSteadyState_ && !isSteadySolve_) return false;
 
     currRes_ = VectorMath::L2Norm
     (
@@ -27,7 +38,5 @@ bool SteadyControl::isReached(const ScalarField& phi)
         phi.oldScalarVariable
     );
 
-    if(currRes_ < ssTol_) return true;
-
-    return false;
+    return (currRes_ < ssTol_);
 }
