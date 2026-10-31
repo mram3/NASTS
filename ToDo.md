@@ -9,3 +9,7 @@
 
 * Right now, Cells and Faces are stored in OOD way, See if it can be refactored to DOD way
 
+* Do a lazy initialization of oldScalarVariable in ScalarField.h
+
+* In SurfaceScalarField's calculateFlux method, Neumann BC not treated as tensor. This will
+  cause problem when there's Slib, wall functions, specific shear stress BC are used
