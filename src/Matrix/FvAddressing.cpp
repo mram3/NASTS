@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <iostream>
 
 namespace FvAddressing
 {
@@ -11,6 +12,8 @@ SparseAddress buildFvAddress
     const FvMesh& mesh
 )
 {
+    std::cout << "Building the fvAddress\n";
+
     const auto& cells = mesh.cells();
     const auto& faces = mesh.faces();
 
@@ -70,6 +73,8 @@ SparseAddress buildFvAddress
             column_.begin() + rowPtr_[i+1]
         );
     }
+
+    std::cout << "FvAddress Built\n\n";
 
     return 
     SparseAddress
