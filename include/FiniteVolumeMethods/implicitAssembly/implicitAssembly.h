@@ -3,6 +3,7 @@
 #include "Matrix/FvMatrix.h"
 #include "FiniteVolumeFields/ScalarField.h"
 #include "FiniteVolumeFields/VectorField.h"
+#include "FiniteVolumeFields/SurfaceScalarField.h"
 
 namespace implicitAssembly
 {
@@ -20,9 +21,8 @@ namespace implicitAssembly
 
     FvMatrix div
     (
-        double rho,
-        ScalarField& phi,
-        VectorField& U
+        SurfaceScalarField& flux,
+        ScalarField& phi
     );
     
 } // namespace implicitAssembly
